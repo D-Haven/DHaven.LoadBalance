@@ -27,7 +27,7 @@ namespace DHaven.LoadBalance.Test
         [Fact]
         public void NothingReturnedWhenNoEntries()
         {
-            var balancer = new AdaptiveLoadBalancer<Scoreable>(s => (int) (1 - s.PercentMemoryLeft * 100));
+            var balancer = new AdaptiveLoadBalancer<Scoreable>(s => (int) (s.PercentMemoryUsec * 100));
 
             balancer.GetResource().Should().BeNull();
         }
@@ -35,14 +35,15 @@ namespace DHaven.LoadBalance.Test
         [Fact]
         public void OnlyItemReturnedEveryTime()
         {
-            var balancer = new AdaptiveLoadBalancer<Scoreable>(s => (int) (1 - s.PercentMemoryLeft * 100));
+            var balancer = new AdaptiveLoadBalancer<Scoreable>(s => (int) (s.PercentMemoryUsec * 100));
             balancer.Resources.Add(new Scoreable
             {
                 Uri = new Uri("http://only.one"),
-                PercentMemoryLeft = .25
+                PercentMemoryUsec = .75
             });
             
             var sameAsFirst = balancer.GetResource();
+            sameAsFirst.Should().NotBeNull();
 
             foreach (var _ in Enumerable.Range(1, 100))
             {
@@ -53,26 +54,26 @@ namespace DHaven.LoadBalance.Test
         [Fact]
         public void ReturnsBasedOnScoringFunction()
         {
-            var balancer = new AdaptiveLoadBalancer<Scoreable>(s => (int) (1 - s.PercentMemoryLeft * 100));
+            var balancer = new AdaptiveLoadBalancer<Scoreable>(s => (int) (s.PercentMemoryUsec * 100));
             balancer.Resources.Add(new Scoreable
             {
                 Uri = new Uri("http://base.one"),
-                PercentMemoryLeft = .25
+                PercentMemoryUsec = .25
             });
             balancer.Resources.Add(new Scoreable
             {
                 Uri = new Uri("http://base.two"),
-                PercentMemoryLeft = .75
+                PercentMemoryUsec = .75
             });
             balancer.Resources.Add(new Scoreable
             {
                 Uri = new Uri("http://base.three"),
-                PercentMemoryLeft = .5
+                PercentMemoryUsec = .5
             });
 
             var item = balancer.GetResource();
-            item.Uri.Should().Be(new Uri("http://base.two"));
-            item.PercentMemoryLeft = .1;
+            item.Uri.Should().Be(new Uri("http://base.one"));
+            item.PercentMemoryUsec = .8;
 
             item = balancer.GetResource();
             item.Uri.Should().Be(new Uri("http://base.three"));
@@ -83,7 +84,7 @@ namespace DHaven.LoadBalance.Test
         class Scoreable
         {
             public Uri Uri { get; set; }
-            public double PercentMemoryLeft { get; set; }
+            public double PercentMemoryUsec { get; set; }
         }
     }
 }
