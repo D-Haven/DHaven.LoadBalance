@@ -1,17 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>netcoreapp2.1</TargetFramework>
+        <TargetFramework>netstandard2.0</TargetFramework>
         <Title>DHaven.LoadBalance</Title>
         <Authors>D-Haven.org</Authors>
         <Description>Utility classes for load balancing</Description>
-        <Copyright>D-Haven.org</Copyright>
+        <Copyright>Copyright 2019 by D-Haven.org</Copyright>
         <PackageProjectUrl>https://github.com/D-Haven/DHaven.LoadBalance</PackageProjectUrl>
         <PackageLicenseUrl>https://github.com/D-Haven/DHaven.LoadBalance/blob/master/LICENSE</PackageLicenseUrl>
         <RepositoryUrl>https://github.com/D-Haven/DHaven.LoadBalance</RepositoryUrl>
-        <RepositoryType>Github</RepositoryType>
+        <RepositoryType>Git</RepositoryType>
         <PackageTags>C# load-balancing</PackageTags>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Version>1.0.0</Version>
+		<AssemblyVersion>1.0.0.0</AssemblyVersion>
     </PropertyGroup>
 
 </Project>
