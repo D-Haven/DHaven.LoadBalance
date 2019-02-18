@@ -11,6 +11,7 @@
         <RepositoryUrl>https://github.com/D-Haven/DHaven.LoadBalance</RepositoryUrl>
         <RepositoryType>Github</RepositoryType>
         <PackageTags>C# load-balancing</PackageTags>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     </PropertyGroup>
 
 </Project>
