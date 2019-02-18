@@ -22,8 +22,6 @@ namespace DHaven.LoadBalance
 {
     public class Updateable<T> : IEquatable<Updateable<T>>, IEquatable<T>
     {
-        private IEquatable<T> equatableImplementation;
-
         public Updateable(T item)
         {
             Item = item;
