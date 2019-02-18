@@ -2,6 +2,15 @@
 
     <PropertyGroup>
         <TargetFramework>netcoreapp2.1</TargetFramework>
+        <Title>DHaven.LoadBalance</Title>
+        <Authors>D-Haven.org</Authors>
+        <Description>Utility classes for load balancing</Description>
+        <Copyright>D-Haven.org</Copyright>
+        <PackageProjectUrl>https://github.com/D-Haven/DHaven.LoadBalance</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/D-Haven/DHaven.LoadBalance/blob/master/LICENSE</PackageLicenseUrl>
+        <RepositoryUrl>https://github.com/D-Haven/DHaven.LoadBalance</RepositoryUrl>
+        <RepositoryType>Github</RepositoryType>
+        <PackageTags>C# load-balancing</PackageTags>
     </PropertyGroup>
 
 </Project>

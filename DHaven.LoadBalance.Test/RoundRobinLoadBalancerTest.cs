@@ -37,7 +37,9 @@ namespace DHaven.LoadBalance.Test
         {
             var balancer = new RoundRobinBalancer<Uri>();
             balancer.Resources.Add(new Uri("http://test.local"));
+
             var sameAsFirst = balancer.GetResource();
+            sameAsFirst.Should().NotBeNull();
 
             foreach (var _ in Enumerable.Range(1, 100))
             {

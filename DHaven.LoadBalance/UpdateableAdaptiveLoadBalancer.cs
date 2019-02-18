@@ -24,52 +24,49 @@ namespace DHaven.LoadBalance
     /// Adaptive Load Balancer works best for a small finite number of resources where
     /// you want to spread the load based on a calculation.  The adaptive load balancer
     /// assumes that lower scores mean more capacity.  Assumes any entries are updated
-    /// live.
+    /// periodically, and adds weight the more an item is requested before an update
+    /// happens.
     /// </summary>
     /// <typeparam name="T">The type of item to balance</typeparam>
-    public class AdaptiveLoadBalancer<T> : ILoadBalancer<T>
+    public class UpdateableAdaptiveLoadBalancer<T> : ILoadBalancer<T>
     {
-        private readonly Func<T,int> calculateScore;
+        private readonly AdaptiveLoadBalancer<Updateable<T>> adaptiveBalancer;
 
         /// <summary>
         /// Creates an adaptive load balancer with the function that scores the items in the list.
         /// </summary>
         /// <param name="scorer">the scoring function</param>
         /// <param name="items">the list of items to load balance (if null will create an empty list)</param>
-        public AdaptiveLoadBalancer(Func<T,int> scorer, IList<T> items = null)
+        public UpdateableAdaptiveLoadBalancer(Func<T, int> scorer, IList<T> items = null)
         {
-            calculateScore = scorer;
-            Resources = items ?? new List<T>();
+            adaptiveBalancer = new AdaptiveLoadBalancer<Updateable<T>>(Adapt(scorer));
+            Resources = new ListAdapter<T, Updateable<T>>(
+                external => new Updateable<T>(external),
+                intItem => intItem.Item,
+                (extItem,intItem) => extItem.Equals(intItem.Item),
+                adaptiveBalancer.Resources);
         }
 
-        /// <inheritdoc />
         public IList<T> Resources { get; }
 
-        /// <inheritdoc />
-        /// <summary>
-        /// Gets the next most available resource.  The algorithm in O(n), since every resource needs
-        /// to be scored.  If multiple entries have the same lowest score, the first one is returned.
-        /// </summary>
-        /// <returns>the most available resource</returns>
         public T GetResource()
         {
-            if (Resources.Count == 0) return default(T);
+            var resource = adaptiveBalancer.GetResource();
+            if (resource == null) return default(T);
+            
+            resource.Requests++;
+            return resource.Item;
+        }
 
-            var lowestScore = int.MaxValue;
-            var bestEntry = default(T);
+        public void Update(T item)
+        {
+            var internalItem = ((ListAdapter<T,Updateable<T>>) Resources).GetInternal(item);
+            internalItem?.Update(item);
+        }
 
-            foreach (var item in Resources)
-            {
-                var score = calculateScore(item);
-
-                if (score < lowestScore)
-                {
-                    lowestScore = score;
-                    bestEntry = item;
-                }
-            }
-
-            return bestEntry;
+        private static Func<Updateable<T>, int> Adapt(Func<T, int> inputScorer)
+        {
+            return updateable => inputScorer(updateable.Item) + updateable.Requests;
         }
     }
 }
