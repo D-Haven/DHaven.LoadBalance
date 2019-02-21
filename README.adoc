@@ -1,5 +1,8 @@
 = Load Balancing Utilities
 
+image:https://ci.appveyor.com/api/projects/status/0c8ec74f1y3jklfx?svg=true[link="https://ci.appveyor.com/project/bloritsch/dhaven-loadbalance"]
+image:https://img.shields.io/badge/nuget-package-blue.svg[link="https://www.nuget.org/packages/DHaven.LoadBalance/"]
+
 D-Haven LoadBalance is a small library to assist with common load balancing tasks.  It is intended to be used
 with other projects I'm working on, which entail a small set of the same type of resource so that work can be
 spread among the instances.  For example, choosing between an instance of a microservice.
