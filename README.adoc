@@ -1,0 +1,29 @@
+= Load Balancing Utilities
+
+image:https://ci.appveyor.com/api/projects/status/0c8ec74f1y3jklfx?svg=true[link="https://ci.appveyor.com/project/bloritsch/dhaven-loadbalance"]
+image:https://img.shields.io/badge/nuget-package-blue.svg[link="https://www.nuget.org/packages/DHaven.LoadBalance/"]
+
+D-Haven LoadBalance is a small library to assist with common load balancing tasks.  It is intended to be used
+with other projects I'm working on, which entail a small set of the same type of resource so that work can be
+spread among the instances.  For example, choosing between an instance of a microservice.
+
+The load balancing algorithms are pretty common.  The ILoadBalancer implementation take an IList of resources
+to allow you to provide your own implementation.  If you don't supply the IList, the LoadBalancer will create
+a default implementation for you.
+
+Using the code is fairly simple.
+
+   // Set up:
+   var balancer = new RoundRobinBalancer<MyResource>(resources);
+   
+   // You can add and remove resources like this:
+   balancer.Resources.Add(new MyResource(23432));
+   balancer.Resources.Remove(23);
+   
+   // And you retrieve the instance to use like this:
+   var myResource = balancer.GetResource();
+
+Also included is an adaptive load balancer if you have a way of testing if the resource is overtaxed.  It returns
+the lowest scored resource, and you provide the function to do the scoring.  I recommend care with the Adaptive
+load balancers because it has to scan the whole list to find the best fit.  Your scoring function can have a big
+impact on how useful it is.
