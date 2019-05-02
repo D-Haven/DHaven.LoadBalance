@@ -20,7 +20,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DHaven.LoadBalance
+namespace DHaven.LoadBalance.Common
 {
     /// <summary>
     /// Internal class to deal with automatically wrapping the updateable and the item being updated.

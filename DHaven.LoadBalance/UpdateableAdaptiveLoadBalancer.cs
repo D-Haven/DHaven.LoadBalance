@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using DHaven.LoadBalance.Common;
 
 namespace DHaven.LoadBalance
 {
@@ -45,6 +46,13 @@ namespace DHaven.LoadBalance
                 intItem => intItem.Item,
                 (extItem,intItem) => extItem.Equals(intItem.Item),
                 adaptiveBalancer.Resources);
+
+            if (items == null) return;
+            
+            foreach (var val in items)
+            {
+                Resources.Add(val);
+            }
         }
 
         public IList<T> Resources { get; }
@@ -61,7 +69,7 @@ namespace DHaven.LoadBalance
         public void Update(T item)
         {
             var internalItem = ((ListAdapter<T,Updateable<T>>) Resources).GetInternal(item);
-            internalItem?.Update(item);
+            internalItem?.Update();
         }
 
         private static Func<Updateable<T>, int> Adapt(Func<T, int> inputScorer)

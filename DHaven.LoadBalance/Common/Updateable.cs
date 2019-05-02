@@ -18,22 +18,22 @@
 using System;
 using System.Collections.Generic;
 
-namespace DHaven.LoadBalance
+namespace DHaven.LoadBalance.Common
 {
     public class Updateable<T> : IEquatable<Updateable<T>>, IEquatable<T>
     {
-        public Updateable(T item)
+        public Updateable(T item, int initialRequests = 0)
         {
             Item = item;
+            Requests = initialRequests;
         }
         
-        public T Item { get; private set; }
+        public T Item { get; }
         
         public int Requests { get; internal set; }
 
-        public void Update(T item)
+        public void Update()
         {
-            Item = item;
             Requests = 0;
         }
 
