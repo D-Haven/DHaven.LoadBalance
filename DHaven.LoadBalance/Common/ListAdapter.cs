@@ -27,7 +27,7 @@ namespace DHaven.LoadBalance.Common
     /// </summary>
     /// <typeparam name="TExternal"></typeparam>
     /// <typeparam name="TInternal"></typeparam>
-    internal class ListAdapter<TExternal,TInternal> : IList<TExternal>
+    public class ListAdapter<TExternal,TInternal> : IList<TExternal>
     {
         private readonly IList<TInternal> internalList;
         private readonly Func<TExternal, TInternal> wrapper;
@@ -75,9 +75,9 @@ namespace DHaven.LoadBalance.Common
 
         public void CopyTo(TExternal[] array, int arrayIndex)
         {
-            for(var i = 0; i + arrayIndex < array.Length; i++)
+            for(var i = 0; i < array.Length && (arrayIndex + i) < Count; i++)
             {
-                array[arrayIndex + i] = this[i];
+                array[i] = this[arrayIndex + i];
             }
         }
 
