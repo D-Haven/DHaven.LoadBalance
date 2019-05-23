@@ -20,6 +20,7 @@
 using System;
 using DHaven.LoadBalance.Config;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace DHaven.LoadBalance
 {
@@ -32,6 +33,8 @@ namespace DHaven.LoadBalance
             
             services.AddSingleton(mapper.Bindings);
             services.AddTransient<BindingHandler>();
+            services.AddHttpClient(Options.DefaultName)
+                .AddHttpMessageHandler<BindingHandler>();
 
             return services;
         }
