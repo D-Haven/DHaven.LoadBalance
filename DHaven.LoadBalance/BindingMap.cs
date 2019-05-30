@@ -17,22 +17,48 @@
 
 using System;
 using System.Collections.Generic;
+using DHaven.LoadBalance.Config;
+using Microsoft.Extensions.Options;
 
 namespace DHaven.LoadBalance
 {
     /// <inheritdoc />
     /// <summary>
-    /// BindingMap maps host names to a load balancer with named URIs, so they can be easily remapped.
+    ///     BindingMap maps host names to a load balancer with named URIs, so they can be easily remapped.
     /// </summary>
     public class BindingMap : Dictionary<string, ILoadBalancer<Uri>>
     {
         /// <summary>
-        /// Transforms the URI based on the current load balancing rules configured in this BindingMap.
-        ///
-        /// Will look up the load balancer using the Host portion of the URI.  Then it will get the next
-        /// URI from the load balancer to create the new URI.
-        ///
-        /// If there are no entries that match the Host, the URI is returned unmolested.
+        ///     Default constructor to create a new BindingMap.
+        /// </summary>
+        public BindingMap()
+        {
+        }
+
+        /// <summary>
+        ///     Support for auto-configuration
+        /// </summary>
+        /// <param name="options">the options to configure the binding automatically</param>
+        public BindingMap(IOptions<Dictionary<string, BalancerOptions>> options)
+        {
+            foreach (var keyVal in options.Value)
+            {
+                keyVal.Value.CheckValidity();
+
+                var loadBalancer = keyVal.Value.Type == BalancerType.RoundRobin
+                    ? (ILoadBalancer<Uri>) new RoundRobinBalancer<Uri>(keyVal.Value.Uris)
+                    : new RandomLoadBalancer<Uri>(keyVal.Value.Uris);
+
+                Add(keyVal.Key, loadBalancer);
+            }
+        }
+
+
+        /// <summary>
+        ///     Transforms the URI based on the current load balancing rules configured in this BindingMap.
+        ///     Will look up the load balancer using the Host portion of the URI.  Then it will get the next
+        ///     URI from the load balancer to create the new URI.
+        ///     If there are no entries that match the Host, the URI is returned unmolested.
         /// </summary>
         /// <param name="uriIn">the URI to transform</param>
         /// <returns>a transformed URI</returns>
@@ -47,12 +73,11 @@ namespace DHaven.LoadBalance
         }
 
         /// <summary>
-        /// Joins a base URI that also contains a path with a path and query so
-        /// that the two are completely concatenated.  This allows users to configure
-        /// the load balancer to map to proxied API endpoints.
-        ///
-        /// The default behavior of the concatenated URI constructor is to ignore any
-        /// path information in the base URI.  We need to respect that information.
+        ///     Joins a base URI that also contains a path with a path and query so
+        ///     that the two are completely concatenated.  This allows users to configure
+        ///     the load balancer to map to proxied API endpoints.
+        ///     The default behavior of the concatenated URI constructor is to ignore any
+        ///     path information in the base URI.  We need to respect that information.
         /// </summary>
         /// <param name="baseUri">The base URI to concatenate</param>
         /// <param name="relativePathAndQuery">The relative path and query string to append</param>
@@ -60,16 +85,11 @@ namespace DHaven.LoadBalance
         private static Uri Join(Uri baseUri, string relativePathAndQuery)
         {
             var root = baseUri.AbsoluteUri;
-            if (root.EndsWith("/"))
-            {
-                root = root.Substring(0, root.Length - 1);
-            }
+            if (root.EndsWith("/")) root = root.Substring(0, root.Length - 1);
 
             if (relativePathAndQuery.StartsWith("/"))
-            {
                 relativePathAndQuery = relativePathAndQuery.Substring(1, relativePathAndQuery.Length - 1);
-            }
-            
+
             return new Uri(string.Join("/", root, relativePathAndQuery));
         }
     }

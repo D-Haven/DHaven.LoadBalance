@@ -60,7 +60,7 @@ namespace DHaven.LoadBalance.Test
         }
     }
 
-    internal class UriValidatingHandler : HttpMessageHandler
+    internal class UriValidatingHandler : DelegatingHandler
     {
         public UriValidatingHandler(Uri expectedUri)
         {
