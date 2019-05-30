@@ -18,7 +18,10 @@
 // under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using DHaven.LoadBalance.Config;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -26,12 +29,29 @@ namespace DHaven.LoadBalance
 {
     public static class LoadBalanceExtensions
     {
-        public static IServiceCollection AddLoadBalancing(this IServiceCollection services, Action<BindingRegistrar> configure)
+        [SuppressMessage("ReSharper", "UnusedMethodReturnValue.Global")]
+        public static IServiceCollection AddLoadBalancing(this IServiceCollection services,
+            Action<BindingRegistrar> configure)
         {
             var mapper = new BindingRegistrar();
             configure(mapper);
-            
+
             services.AddSingleton(mapper.Bindings);
+            services.AddTransient<BindingHandler>();
+            services.AddHttpClient(Options.DefaultName)
+                .AddHttpMessageHandler<BindingHandler>();
+
+            return services;
+        }
+
+        [SuppressMessage("ReSharper", "UnusedMethodReturnValue.Global")]
+        public static IServiceCollection AddLoadBalancing(this IServiceCollection services,
+            IConfiguration configuration)
+        {
+            services.Configure<Dictionary<string, BalancerOptions>>(options =>
+                configuration.GetSection("D-Haven:LocalBalancer").Bind(options));
+
+            services.AddSingleton<BindingMap>();
             services.AddTransient<BindingHandler>();
             services.AddHttpClient(Options.DefaultName)
                 .AddHttpMessageHandler<BindingHandler>();

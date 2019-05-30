@@ -18,8 +18,11 @@
 // under the License.
 
 using System;
+using System.IO;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Xunit;
@@ -28,22 +31,6 @@ namespace DHaven.LoadBalance.Test
 {
     public class LoadBalanceExtensionsTest
     {
-        [Fact]
-        public async Task RegisteringBalancerWillResolveHost()
-        {
-            var service = new ServiceCollection();
-            service.AddLoadBalancing(registrar =>
-                {
-                    registrar.RegisterRoundRobin("test", new Uri("https://something"));
-                });
-
-            var provider = GenerateValidatingProvider(service, new Uri("https://something/one/two/three"));
-
-            var client = provider.GetService<IHttpClientFactory>().CreateClient();
-            var response = await client.GetAsync("http://test/one/two/three");
-            await response.ShouldMatchUri();
-        }
-
         private static IServiceProvider GenerateValidatingProvider(IServiceCollection services, Uri uri)
         {
             services.AddSingleton(new UriValidatingHandler(uri));
@@ -51,6 +38,39 @@ namespace DHaven.LoadBalance.Test
                 .AddHttpMessageHandler<UriValidatingHandler>();
 
             return services.BuildServiceProvider();
+        }
+
+        [Fact]
+        public async Task CanRegisterWithConfiguration()
+        {
+            var service = new ServiceCollection();
+            var builder = new ConfigurationBuilder();
+            builder.SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+            builder.AddJsonFile("good-test.json");
+
+            service.AddLoadBalancing(builder.Build());
+
+            var provider = GenerateValidatingProvider(service, new Uri("https://something/one/two/three"));
+
+            var client = provider.GetService<IHttpClientFactory>().CreateClient();
+            var response = await client.GetAsync("http://validate/one/two/three");
+            await response.ShouldMatchUri();
+        }
+
+        [Fact]
+        public async Task RegisteringBalancerWillResolveHost()
+        {
+            var service = new ServiceCollection();
+            service.AddLoadBalancing(registrar =>
+            {
+                registrar.RegisterRoundRobin("test", new Uri("https://something"));
+            });
+
+            var provider = GenerateValidatingProvider(service, new Uri("https://something/one/two/three"));
+
+            var client = provider.GetService<IHttpClientFactory>().CreateClient();
+            var response = await client.GetAsync("http://test/one/two/three");
+            await response.ShouldMatchUri();
         }
     }
 }
