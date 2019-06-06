@@ -1,19 +1,23 @@
 {
   "D-Haven": {
     "LocalBalancer": {
-      "validate": {
-        "Type": "Random",
-        "Uris": [
-          "https://something"
-        ]
-      },
-      "unrelated": {
-        "Type": "RoundRobin",
-        "Uris": [
-          "http://localhost:8080",
-          "http://localhost:8081",
-          "http://localhost:8082"
-        ]
+      "MaximumTimeout": "00:00:30",
+      "RetryTimeout": "00:00:10",
+      "Map": {
+        "validate": {
+          "Type": "Random",
+          "Uris": [
+            "https://something"
+          ]
+        },
+        "unrelated": {
+          "Type": "RoundRobin",
+          "Uris": [
+            "http://localhost:8080",
+            "http://localhost:8081",
+            "http://localhost:8082"
+          ]
+        }
       }
     }
   }

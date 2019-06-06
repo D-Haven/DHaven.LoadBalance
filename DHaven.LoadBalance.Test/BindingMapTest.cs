@@ -24,23 +24,48 @@ namespace DHaven.LoadBalance.Test
     public class BindingMapTest
     {
         [Fact]
+        public void CanUseBaseRoute()
+        {
+            var balancer = new RoundRobinBalancer<Uri>();
+            balancer.Resources.Add(new Uri("https://127.0.0.1/api/round-robin"));
+            balancer.Resources.Add(new Uri("http://[::1]/round-robin"));
+            balancer.Resources.Add(new Uri("https://www.google.com/api/foo/bar/baz"));
+            var bindingMap = new BindingMap {{"round-robin", balancer}};
+
+            var startUri = new Uri("http://round-robin/more-complex/query?foo=bar&baz=1");
+
+            bindingMap.TryRebindUri(startUri, out var newUri).Should().BeTrue();
+            newUri.Should()
+                .BeEquivalentTo(new Uri("https://127.0.0.1/api/round-robin/more-complex/query?foo=bar&baz=1"));
+            bindingMap.TryRebindUri(startUri, out newUri).Should().BeTrue();
+            newUri.Should().BeEquivalentTo(new Uri("http://[::1]/round-robin/more-complex/query?foo=bar&baz=1"));
+            bindingMap.TryRebindUri(startUri, out newUri).Should().BeTrue();
+            newUri.Should()
+                .BeEquivalentTo(new Uri("https://www.google.com/api/foo/bar/baz/more-complex/query?foo=bar&baz=1"));
+            bindingMap.TryRebindUri(startUri, out newUri).Should().BeTrue();
+            newUri.Should()
+                .BeEquivalentTo(new Uri("https://127.0.0.1/api/round-robin/more-complex/query?foo=bar&baz=1"));
+        }
+
+        [Fact]
         public void UriIsRequired()
         {
             var bindingMap = new BindingMap();
-            Action action = () => bindingMap.RebindUri(null);
-            
+            Action action = () => bindingMap.TryRebindUri(null, out _);
+
             action.Should()
                 .Throw<ArgumentNullException>()
                 .WithMessage("Value cannot be null.\nParameter name: *");
         }
-        
+
         [Fact]
         public void WillIgnoreUrisNotConfigured()
-        {            
+        {
             var bindingMap = new BindingMap();
-            
+
             var startUri = new Uri("http://test/resource");
-            bindingMap.RebindUri(startUri).Should().BeEquivalentTo(startUri);
+            bindingMap.TryRebindUri(startUri, out var newUri).Should().BeFalse();
+            newUri.Should().BeEquivalentTo(startUri);
         }
 
         [Fact]
@@ -49,9 +74,10 @@ namespace DHaven.LoadBalance.Test
             var balancer = new RandomLoadBalancer<Uri>();
             balancer.Resources.Add(new Uri("https://127.0.0.1"));
             var bindingMap = new BindingMap {{"test", balancer}};
-            
+
             var startUri = new Uri("http://test/resource");
-            bindingMap.RebindUri(startUri).Should().BeEquivalentTo(new Uri("https://127.0.0.1/resource"));
+            bindingMap.TryRebindUri(startUri, out var newUri).Should().BeTrue();
+            newUri.Should().BeEquivalentTo(new Uri("https://127.0.0.1/resource"));
         }
 
         [Fact]
@@ -64,28 +90,15 @@ namespace DHaven.LoadBalance.Test
             var bindingMap = new BindingMap {{"round-robin", balancer}};
 
             var startUri = new Uri("http://round-robin/more-complex/query?foo=bar&baz=1");
-            
-            bindingMap.RebindUri(startUri).Should().BeEquivalentTo(new Uri("https://127.0.0.1/more-complex/query?foo=bar&baz=1"));
-            bindingMap.RebindUri(startUri).Should().BeEquivalentTo(new Uri("http://[::1]/more-complex/query?foo=bar&baz=1"));
-            bindingMap.RebindUri(startUri).Should().BeEquivalentTo(new Uri("https://www.google.com/more-complex/query?foo=bar&baz=1"));
-            bindingMap.RebindUri(startUri).Should().BeEquivalentTo(new Uri("https://127.0.0.1/more-complex/query?foo=bar&baz=1"));
-        }
 
-        [Fact]
-        public void CanUseBaseRoute()
-        {
-            var balancer = new RoundRobinBalancer<Uri>();
-            balancer.Resources.Add(new Uri("https://127.0.0.1/api/round-robin"));
-            balancer.Resources.Add(new Uri("http://[::1]/round-robin"));
-            balancer.Resources.Add(new Uri("https://www.google.com/api/foo/bar/baz"));
-            var bindingMap = new BindingMap {{"round-robin", balancer}};
-
-            var startUri = new Uri("http://round-robin/more-complex/query?foo=bar&baz=1");
-            
-            bindingMap.RebindUri(startUri).Should().BeEquivalentTo(new Uri("https://127.0.0.1/api/round-robin/more-complex/query?foo=bar&baz=1"));
-            bindingMap.RebindUri(startUri).Should().BeEquivalentTo(new Uri("http://[::1]/round-robin/more-complex/query?foo=bar&baz=1"));
-            bindingMap.RebindUri(startUri).Should().BeEquivalentTo(new Uri("https://www.google.com/api/foo/bar/baz/more-complex/query?foo=bar&baz=1"));
-            bindingMap.RebindUri(startUri).Should().BeEquivalentTo(new Uri("https://127.0.0.1/api/round-robin/more-complex/query?foo=bar&baz=1"));
+            bindingMap.TryRebindUri(startUri, out var newUri).Should().BeTrue();
+            newUri.Should().BeEquivalentTo(new Uri("https://127.0.0.1/more-complex/query?foo=bar&baz=1"));
+            bindingMap.TryRebindUri(startUri, out newUri).Should().BeTrue();
+            newUri.Should().BeEquivalentTo(new Uri("http://[::1]/more-complex/query?foo=bar&baz=1"));
+            bindingMap.TryRebindUri(startUri, out newUri).Should().BeTrue();
+            newUri.Should().BeEquivalentTo(new Uri("https://www.google.com/more-complex/query?foo=bar&baz=1"));
+            bindingMap.TryRebindUri(startUri, out newUri).Should().BeTrue();
+            newUri.Should().BeEquivalentTo(new Uri("https://127.0.0.1/more-complex/query?foo=bar&baz=1"));
         }
     }
 }

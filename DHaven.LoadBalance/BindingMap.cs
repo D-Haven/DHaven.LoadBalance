@@ -28,6 +28,8 @@ namespace DHaven.LoadBalance
     /// </summary>
     public class BindingMap : Dictionary<string, ILoadBalancer<Uri>>
     {
+        private readonly IOptions<LoadBalanceOptions> options;
+
         /// <summary>
         ///     Default constructor to create a new BindingMap.
         /// </summary>
@@ -39,9 +41,11 @@ namespace DHaven.LoadBalance
         ///     Support for auto-configuration
         /// </summary>
         /// <param name="options">the options to configure the binding automatically</param>
-        public BindingMap(IOptions<Dictionary<string, BalancerOptions>> options)
+        public BindingMap(IOptions<LoadBalanceOptions> options)
         {
-            foreach (var keyVal in options.Value)
+            this.options = options;
+
+            foreach (var keyVal in options.Value.Map)
             {
                 keyVal.Value.CheckValidity();
 
@@ -53,6 +57,17 @@ namespace DHaven.LoadBalance
             }
         }
 
+        /// <summary>
+        ///     The maximum amount of time the user will be waiting to resolve a host.  This is the point where
+        ///     there is a complete failure.
+        /// </summary>
+        public TimeSpan MaximumTimeout => options?.Value.MaximumTimeout ?? TimeSpan.MaxValue;
+
+        /// <summary>
+        ///     The amount of time before we attempt ot retry a new host.  This must be before the maximum timeout
+        ///     to function.
+        /// </summary>
+        public TimeSpan RetryTimeout => options?.Value.RetryTimeout ?? TimeSpan.MaxValue;
 
         /// <summary>
         ///     Transforms the URI based on the current load balancing rules configured in this BindingMap.
@@ -63,13 +78,16 @@ namespace DHaven.LoadBalance
         /// <param name="uriIn">the URI to transform</param>
         /// <returns>a transformed URI</returns>
         /// <exception cref="ArgumentNullException">if the URI is not provided</exception>
-        public Uri RebindUri(Uri uriIn)
+        public bool TryRebindUri(Uri uriIn, out Uri uriOut)
         {
             if (uriIn == null) throw new ArgumentNullException(nameof(uriIn));
 
-            return TryGetValue(uriIn.Host, out var loadBalancer)
-                ? Join(loadBalancer.GetResource(), uriIn.PathAndQuery)
-                : uriIn;
+            uriOut = uriIn;
+            var bound = TryGetValue(uriIn.Host, out var loadBalancer);
+
+            if (bound) uriOut = Join(loadBalancer.GetResource(), uriIn.PathAndQuery);
+
+            return bound;
         }
 
         /// <summary>

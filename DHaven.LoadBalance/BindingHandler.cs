@@ -30,10 +30,13 @@ namespace DHaven.LoadBalance
 
         private BindingMap BindingMap { get; }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
-            request.RequestUri = BindingMap.RebindUri(request.RequestUri);
-            
+            var wasLoadBalanced = BindingMap.TryRebindUri(request.RequestUri, out var newUri);
+
+            if (wasLoadBalanced) request.RequestUri = newUri;
+
             return base.SendAsync(request, cancellationToken);
         }
     }
