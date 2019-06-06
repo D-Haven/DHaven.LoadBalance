@@ -18,10 +18,12 @@
 // under the License.
 
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
+using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -71,6 +73,22 @@ namespace DHaven.LoadBalance.Test
             var client = provider.GetService<IHttpClientFactory>().CreateClient();
             var response = await client.GetAsync("http://test/one/two/three");
             await response.ShouldMatchUri();
+        }
+
+        [Fact]
+        public void RegisteringWithConfigurationEnforcesMaxTimeoutGreaterThanRetryTimeout()
+        {
+            var service = new ServiceCollection();
+            var builder = new ConfigurationBuilder();
+            builder.SetBasePath(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location));
+            builder.AddJsonFile("bad-retry-options.json");
+
+            service.AddLoadBalancing(builder.Build());
+
+            var provider = GenerateValidatingProvider(service, new Uri("https://something/one/two/three"));
+
+            Action test = () => provider.GetService<IHttpClientFactory>().CreateClient();
+            test.Should().Throw<ValidationException>();
         }
     }
 }

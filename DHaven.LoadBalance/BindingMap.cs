@@ -61,13 +61,13 @@ namespace DHaven.LoadBalance
         ///     The maximum amount of time the user will be waiting to resolve a host.  This is the point where
         ///     there is a complete failure.
         /// </summary>
-        public TimeSpan MaximumTimeout => options?.Value.MaximumTimeout ?? TimeSpan.MaxValue;
+        public TimeSpan MaximumTimeout => options?.Value.MaximumTimeout ?? TimeSpan.FromSeconds(100);
 
         /// <summary>
         ///     The amount of time before we attempt ot retry a new host.  This must be before the maximum timeout
         ///     to function.
         /// </summary>
-        public TimeSpan RetryTimeout => options?.Value.RetryTimeout ?? TimeSpan.MaxValue;
+        public TimeSpan RetryTimeout => options?.Value.RetryTimeout ?? TimeSpan.FromSeconds(50);
 
         /// <summary>
         ///     Transforms the URI based on the current load balancing rules configured in this BindingMap.

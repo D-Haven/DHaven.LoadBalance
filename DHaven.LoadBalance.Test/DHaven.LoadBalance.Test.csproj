@@ -21,6 +21,9 @@
 
     <ItemGroup>
       <None Remove="test.json" />
+      <Content Include="bad-retry-options.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
       <Content Include="good-test.json">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       </Content>

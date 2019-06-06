@@ -18,6 +18,7 @@
 // under the License.
 
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using DHaven.LoadBalance.Config;
 using Microsoft.Extensions.Configuration;
@@ -49,6 +50,13 @@ namespace DHaven.LoadBalance
         {
             services.Configure<LoadBalanceOptions>(options =>
                 configuration.GetSection("D-Haven:LocalBalancer").Bind(options));
+
+            services.PostConfigure<LoadBalanceOptions>(options =>
+            {
+                if (options.RetryTimeout > options.MaximumTimeout)
+                    throw new ValidationException(
+                        "D-Haven LoadBalancer config error: Retry timeout must be lower than the maximum timeout");
+            });
 
             services.AddSingleton<BindingMap>();
             services.AddTransient<BindingHandler>();
