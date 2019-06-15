@@ -7,6 +7,32 @@ D-Haven LoadBalance is a small library to assist with common load balancing task
 with other projects I'm working on, which entail a small set of the same type of resource so that work can be
 spread among the instances.  For example, choosing between an instance of a microservice.
 
+You can either use the raw load balancers for your application (see below), or use the built in URI handlers
+for local load balancing for your own services.
+
+== URI load balancing
+
+We have dependency injection support for the HttpClientFactory to resolve a named resource by name.  Manual
+configuraiton looks like this:
+
+    services.AddLoadBalancing(registrar =>
+		{
+            registrar.RegisterRoundRobin("service-name",
+                new Uri("https://something"),
+				new Uri("https://something:444"),
+				new Uri("https://something:445"));
+		});
+
+When you actually need to access your service you claim the IHttpClientFactory as a dependency, and have it
+create your HttpClient locally:
+
+    using (var client = factory.CreateClient())
+	{
+		var response = await client.GetAsync("http://service-name/one/two/three");
+	}
+
+== Raw load balancing capability
+
 The load balancing algorithms are pretty common.  The ILoadBalancer implementation take an IList of resources
 to allow you to provide your own implementation.  If you don't supply the IList, the LoadBalancer will create
 a default implementation for you.
