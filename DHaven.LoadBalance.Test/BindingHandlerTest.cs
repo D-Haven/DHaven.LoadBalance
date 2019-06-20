@@ -18,20 +18,37 @@
 // under the License.
 
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using DHaven.LoadBalance.Config;
+using FluentAssertions;
+using Microsoft.Extensions.Options;
 using Xunit;
 
 namespace DHaven.LoadBalance.Test
 {
     public class BindingHandlerTest
     {
-        private readonly BindingMap bindingMap = new BindingMap {{"test", 
-            new RoundRobinBalancer<Uri>( 
-                new[] {new Uri("https://127.0.0.1")})
-        }};
+        private static readonly IOptions<LoadBalanceOptions> Options = new TestOptions<LoadBalanceOptions>(new LoadBalanceOptions
+        {
+            // NOTE: These timeouts are only so tests don't take so long.  They are not recommended for production.
+            MaximumTimeout = TimeSpan.FromSeconds(5),
+            RetryTimeout = TimeSpan.FromSeconds(.5),
+            Map = 
+            {
+                { "test", new BalancerOptions
+                    {
+                        Type = BalancerType.RoundRobin,
+                        Uris = {new Uri("https://127.0.0.1"),
+                            new Uri("https://[::1]") }
+                    }
+                }
+            }
+        });
+        private readonly BindingMap bindingMap = new BindingMap(Options);
 
         [Fact]
         public async Task HandlerWillRemapHandledUris()
@@ -49,6 +66,31 @@ namespace DHaven.LoadBalance.Test
 
             var response = await client.GetAsync("http://something/one/two/three");
             await response.ShouldMatchUri();
+        }
+
+        [Fact]
+        public async Task HandlerWillRespectMaxTimeout()
+        {
+            var delayingHandler = new DelayingHandler(TimeSpan.FromSeconds(120))
+            {
+                InnerHandler = new UriValidatingHandler(new Uri("https://127.0.0.1/one/two/three"))
+            };
+            
+            var client = new HttpClient(new BindingHandler(bindingMap)
+            {
+                InnerHandler = delayingHandler
+            });
+
+            var watch = new Stopwatch();
+            watch.Start();
+            var response = await client.GetAsync("http://test/one/two/three");
+            watch.Stop();
+            
+            // NOTE: Task.Delay is not super precise, and errors will compound with retry
+            watch.Elapsed.Should().BeCloseTo(bindingMap.MaximumTimeout, 
+                (int)bindingMap.RetryTimeout.TotalMilliseconds + 200);
+            response.StatusCode.Should().BeEquivalentTo(HttpStatusCode.GatewayTimeout);
+            delayingHandler.NumberOfInvocations.Should().BeGreaterThan(1);
         }
 
         private BindingHandler Create(Uri expectedUri)

@@ -1,8 +1,8 @@
 {
   "D-Haven": {
     "LocalBalancer": {
-      "MaximumTimeout": "00:00:30",
-      "RetryTimeout": "00:00:10",
+      "MaximumTimeout": "00:00:05",
+      "RetryTimeout": "00:00:50",
       "Map": {
         "validate": {
           "Type": "Random",

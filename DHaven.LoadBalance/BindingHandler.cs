@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+using System;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,11 +32,44 @@ namespace DHaven.LoadBalance
 
         private BindingMap BindingMap { get; }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+            CancellationToken cancellationToken)
         {
-            request.RequestUri = BindingMap.RebindUri(request.RequestUri);
-            
-            return base.SendAsync(request, cancellationToken);
+            HttpResponseMessage response = null;
+            var endTime = DateTime.Now + BindingMap.MaximumTimeout;
+
+            while (response == null && DateTime.Now < endTime)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                
+                var wasLoadBalanced = BindingMap.TryRebindUri(request.RequestUri, out var newUri);
+                if (wasLoadBalanced) request.RequestUri = newUri;
+
+                try
+                {
+                    var timeout = wasLoadBalanced ? BindingMap.RetryTimeout : BindingMap.MaximumTimeout;
+                    
+                    response = await AttemptSendAsync(request, timeout, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    // If we got an operation cancel exception, we are only worried about
+                    // this iteration.  It doesn't mean that the whole operation got cancelled.
+                    response = null;
+                }
+            }
+
+            return response ?? new HttpResponseMessage(HttpStatusCode.GatewayTimeout);
+        }
+
+        private async Task<HttpResponseMessage> AttemptSendAsync(HttpRequestMessage request, TimeSpan timeout,
+            CancellationToken cancellationToken)
+        {
+            using (var timeoutSource = new CancellationTokenSource(timeout))
+            using (var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(timeoutSource.Token, cancellationToken))
+            {
+                return await base.SendAsync(request, linkedSource.Token);
+            }
         }
     }
 }
