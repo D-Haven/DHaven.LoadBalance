@@ -16,6 +16,7 @@
 // under the License.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using Xunit;
@@ -53,19 +54,22 @@ namespace DHaven.LoadBalance.Test
         [Fact]
         public void ReturnsBasedOnScoringFunction()
         {
-            var balancer = new UpdateableAdaptiveLoadBalancer<Scoreable>(s => (int) (s.PercentMemoryUsec * 100));
-            balancer.Resources.Add(new Scoreable(new Uri("http://base.one"))
-            {
-                PercentMemoryUsec = .25
-            });
-            balancer.Resources.Add(new Scoreable(new Uri("http://base.two"))
-            {
-                PercentMemoryUsec = .75
-            });
-            balancer.Resources.Add(new Scoreable(new Uri("http://base.three"))
-            {
-                PercentMemoryUsec = .5
-            });
+            var balancer = new UpdateableAdaptiveLoadBalancer<Scoreable>(s => (int) (s.PercentMemoryUsec * 100),
+                new List<Scoreable>
+                {
+                    new Scoreable(new Uri("http://base.one"))
+                    {
+                        PercentMemoryUsec = .25
+                    },
+                    new Scoreable(new Uri("http://base.two"))
+                    {
+                        PercentMemoryUsec = .75
+                    },
+                    new Scoreable(new Uri("http://base.three"))
+                    {
+                        PercentMemoryUsec = .5
+                    }
+                });
 
             var item = balancer.GetResource();
             item.Uri.Should().Be(new Uri("http://base.one"));

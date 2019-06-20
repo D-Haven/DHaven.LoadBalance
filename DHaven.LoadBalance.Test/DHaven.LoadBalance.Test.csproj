@@ -8,6 +8,8 @@
 
     <ItemGroup>
         <PackageReference Include="FluentAssertions" Version="5.6.0" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.2.0" />
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
         <PackageReference Include="xunit" Version="2.4.0" />
         <PackageReference Include="xunit.runner.visualstudio" Version="2.4.0" />
@@ -15,6 +17,17 @@
 
     <ItemGroup>
       <ProjectReference Include="..\DHaven.LoadBalance\DHaven.LoadBalance.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="test.json" />
+      <Content Include="bad-retry-options.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <Content Include="good-test.json">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="duplicate-name.json" />
     </ItemGroup>
 
 </Project>
